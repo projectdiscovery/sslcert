@@ -25,7 +25,10 @@ func main() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello World"))
+		_, er := w.Write([]byte("Hello World"))
+		if er != nil {
+			log.Print(er)
+		}
 	})
 
 	fmt.Println("Started HTTPS server on " + server.Addr)
