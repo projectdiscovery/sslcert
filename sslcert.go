@@ -35,7 +35,7 @@ func pubKey(priv interface{}) interface{} {
 
 func Generate(options Options) (privateKey, publicKey []byte, err error) {
 	if options.Host == "" {
-		return nil, nil, errors.New("Empty host value")
+		return nil, nil, errors.New("empty host value")
 	}
 
 	var priv interface{}
@@ -55,11 +55,11 @@ func Generate(options Options) (privateKey, publicKey []byte, err error) {
 	case "P521":
 		priv, err = ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
 	default:
-		err = fmt.Errorf("Unrecognized elliptic curve: %q", options.EcdsaCurve)
+		err = fmt.Errorf("unrecognized elliptic curve: %q", options.EcdsaCurve)
 		return
 	}
 	if err != nil {
-		err = fmt.Errorf("Failed to generate private key: %v", err)
+		err = fmt.Errorf("failed to generate private key: %v", err)
 		return
 	}
 
@@ -79,7 +79,7 @@ func Generate(options Options) (privateKey, publicKey []byte, err error) {
 	} else {
 		notBefore, err = time.Parse("Jan 2 15:04:05 2006", options.ValidFrom)
 		if err != nil {
-			err = fmt.Errorf("Failed to parse creation date: %v", err)
+			err = fmt.Errorf("failed to parse creation date: %v", err)
 			return
 		}
 	}
@@ -89,7 +89,7 @@ func Generate(options Options) (privateKey, publicKey []byte, err error) {
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		err = fmt.Errorf("Failed to generate serial number: %v", err)
+		err = fmt.Errorf("failed to generate serial number: %v", err)
 		return
 	}
 
@@ -122,7 +122,7 @@ func Generate(options Options) (privateKey, publicKey []byte, err error) {
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, pubKey(priv), priv)
 	if err != nil {
-		err = fmt.Errorf("Failed to create certificate: %v", err)
+		err = fmt.Errorf("failed to create certificate: %v", err)
 		return
 	}
 
@@ -130,24 +130,28 @@ func Generate(options Options) (privateKey, publicKey []byte, err error) {
 	pubKeyBufb := bufio.NewWriter(&pubKeyBuf)
 	err = pem.Encode(pubKeyBufb, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 	if err != nil {
-		err = fmt.Errorf("Failed to write data to cert.pem: %v", err)
+		err = fmt.Errorf("failed to write data to cert.pem: %v", err)
 		return
 	}
-	pubKeyBufb.Flush()
+	if err = pubKeyBufb.Flush(); err != nil {
+		return
+	}
 
 	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
 	if err != nil {
-		err = fmt.Errorf("Unable to marshal private key: %v", err)
+		err = fmt.Errorf("unable to marshal private key: %v", err)
 		return
 	}
 	var privKeyBuf bytes.Buffer
 	privKeyBufb := bufio.NewWriter(&privKeyBuf)
 	err = pem.Encode(privKeyBufb, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes})
 	if err != nil {
-		err = fmt.Errorf("Failed to write data to key.pem: %v", err)
+		err = fmt.Errorf("failed to write data to key.pem: %v", err)
 		return
 	}
-	privKeyBufb.Flush()
+	if err = privKeyBufb.Flush(); err != nil {
+		return
+	}
 
 	return pubKeyBuf.Bytes(), privKeyBuf.Bytes(), nil
 }
